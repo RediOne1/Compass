@@ -10,33 +10,41 @@
 	android:paddingTop="@dimen/activity_vertical_margin"
 	tools:context=".MainActivity">
 
-	<ImageView
-		android:layout_width="match_parent"
-		android:layout_height="wrap_content"
-		android:layout_centerInParent="true"
-		android:adjustViewBounds="true"
-		android:contentDescription="@string/compass_background"
-		android:scaleType="centerInside"
-		android:src="@drawable/compass_background"/>
-
-	<ImageView
-		android:id="@+id/bearing_needle"
+	<include
+		android:id="@+id/info_layout"
+		layout="@layout/location_info_layout"
 		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
-		android:layout_centerInParent="true"
-		android:adjustViewBounds="true"
-		android:scaleType="centerInside"
-		android:contentDescription="@string/compass_needle"
-		android:src="@drawable/compass_beering_needle"/>
+		android:layout_alignParentTop="true"
+		android:layout_centerHorizontal="true"/>
 
-	<ImageView
-		android:id="@+id/needle"
+	<include
+		layout="@layout/compass_layout"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_above="@+id/buttons_layout"
+		android:layout_below="@+id/info_layout"
+		android:layout_centerHorizontal="true"/>
+
+	<LinearLayout
+		android:id="@+id/buttons_layout"
 		android:layout_width="match_parent"
 		android:layout_height="wrap_content"
-		android:layout_centerInParent="true"
-		android:adjustViewBounds="true"
-		android:contentDescription="@string/compass_needle"
-		android:scaleType="centerInside"
-		android:src="@drawable/compass_needle"/>
+		android:layout_alignParentBottom="true">
+
+		<Button
+			android:id="@+id/latitudeButton"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"
+			android:text="@string/latitude"/>
+
+		<Button
+			android:id="@+id/longitudeButton"
+			android:layout_width="0dp"
+			android:layout_height="wrap_content"
+			android:layout_weight="1"
+			android:text="@string/longitude"/>
+	</LinearLayout>
 
 </RelativeLayout>

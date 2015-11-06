@@ -1,6 +1,7 @@
 package co.netguru.compass;
 
 import android.Manifest;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.hardware.GeomagneticField;
@@ -8,8 +9,6 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.location.Criteria;
-import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
@@ -17,10 +16,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Looper;
 import android.support.v4.app.ActivityCompat;
-import android.util.Log;
+import android.view.animation.LinearInterpolator;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -36,8 +33,6 @@ public class OrientationManager implements SensorEventListener {
 
 	private static final long MILLIS_BETWEEN_LOCATIONS = TimeUnit.SECONDS.toMillis(3);
 
-	private static final int MAX_NORTH_LIST_SIZE = 50;
-
 	private final Sensor accelerometer;
 	private final Sensor magnetometer;
 	private SensorManager sensorManager;
@@ -47,13 +42,15 @@ public class OrientationManager implements SensorEventListener {
 	private float[] geomagnetic;
 	private GeomagneticField geomagneticField;
 	private OrientationListener orientationListener;
-	private LinkedList<Float> northList = new LinkedList<>();
 	private float bearingLatitude = 0f;
 	private float bearingLongitude = 0f;
+	private ValueAnimator animator;
+	private float north;
 	private LocationListener locationListener = new LocationListener() {
 		@Override
 		public void onLocationChanged(Location location) {
 			mLocation = location;
+			orientationListener.onLocationChange(location);
 			updateGeomagneticField();
 		}
 
@@ -64,8 +61,6 @@ public class OrientationManager implements SensorEventListener {
 
 		@Override
 		public void onProviderEnabled(String provider) {
-			Log.d("DEBUG_TAG", "DUPA1");
-			setupLocationManager();
 		}
 
 		@Override
@@ -80,16 +75,19 @@ public class OrientationManager implements SensorEventListener {
 		accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 		magnetometer = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 		orientationListener = (OrientationListener) context;
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-			if (ActivityCompat.checkSelfPermission((Context) orientationListener, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission((Context) orientationListener, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-				orientationListener.mRequestPermissions(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION);
-				return;
-			}
-		}
-		this.locationManager.addGpsStatusListener(new GpsStatus.Listener() {
+		setUpAnimator();
+	}
+
+	private void setUpAnimator() {
+		animator = new ValueAnimator();
+		animator.setInterpolator(new LinearInterpolator());
+		animator.setDuration(200);
+		animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
 			@Override
-			public void onGpsStatusChanged(int event) {
-				setupLocationManager();
+			public void onAnimationUpdate(ValueAnimator animation) {
+				north = (float) animation.getAnimatedValue();
+				if (orientationListener != null)
+					orientationListener.onOrientationChange(north, north + getBearingDegrees());
 			}
 		});
 	}
@@ -121,22 +119,15 @@ public class OrientationManager implements SensorEventListener {
 			long locationAge = lastLocation.getTime() - System.currentTimeMillis();
 			if (locationAge < MAX_LOCATION_AGE_MILLIS) {
 				mLocation = lastLocation;
+				orientationListener.onLocationChange(lastLocation);
 				updateGeomagneticField();
 			}
 		}
-		Criteria criteria = new Criteria();
-		criteria.setAccuracy(Criteria.ACCURACY_FINE);
-		criteria.setBearingRequired(false);
-		criteria.setSpeedRequired(false);
 
-		List<String> providers =
-				locationManager.getProviders(criteria, true /* enabledOnly */);
-		for (String provider : providers) {
-			locationManager.requestLocationUpdates(provider,
-					MILLIS_BETWEEN_LOCATIONS, METERS_BETWEEN_LOCATIONS, locationListener,
-					Looper.getMainLooper());
-		}
+		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+				MILLIS_BETWEEN_LOCATIONS, METERS_BETWEEN_LOCATIONS, locationListener, Looper.getMainLooper());
 	}
+
 
 	public void stop() {
 		sensorManager.unregisterListener(this);
@@ -166,29 +157,20 @@ public class OrientationManager implements SensorEventListener {
 				float orientation[] = new float[3];
 				SensorManager.getOrientation(R, orientation);
 				float azimut = orientation[0];
-				float north = computeTrueNorth(-azimut * 360 / (2 * 3.14159f));
-				north = calculateAverage(north);
-				float bearingDegrees = 0f;
-				if (mLocation != null) {
-					Location destLocation = new Location(mLocation);
-					destLocation.setLatitude(bearingLatitude);
-					destLocation.setLongitude(bearingLongitude);
-					bearingDegrees = mLocation.bearingTo(destLocation);
-				}
-				if (orientationListener != null)
-					orientationListener.onOrientationChange(north, north + bearingDegrees);
+				animateTo(computeTrueNorth(-azimut * 360 / (2 * 3.14159f)));
 			}
 		}
 	}
 
-	private float calculateAverage(float north) {
-		northList.add(north);
-		if (northList.size() > MAX_NORTH_LIST_SIZE)
-			northList.remove(0);
-		float avgNorth = 0f;
-		for (float northItem : northList)
-			avgNorth += northItem;
-		return avgNorth / northList.size();
+	private float getBearingDegrees() {
+		float bearingDegrees = 0f;
+		if (mLocation != null) {
+			Location destLocation = new Location(mLocation);
+			destLocation.setLatitude(bearingLatitude);
+			destLocation.setLongitude(bearingLongitude);
+			bearingDegrees = mLocation.bearingTo(destLocation);
+		}
+		return bearingDegrees;
 	}
 
 	private float computeTrueNorth(float heading) {
@@ -203,5 +185,26 @@ public class OrientationManager implements SensorEventListener {
 		geomagneticField = new GeomagneticField((float) mLocation.getLatitude(),
 				(float) mLocation.getLongitude(), (float) mLocation.getAltitude(),
 				mLocation.getTime());
+	}
+
+	private void animateTo(float end) {
+		if (!animator.isRunning()) {
+			float start = north;
+			float distance = Math.abs(end - start);
+			float reverseDistance = 360.0f - distance;
+			float goal;
+
+			if (distance < reverseDistance) {
+				goal = end;
+			} else if (end < start) {
+				goal = end + 360.0f;
+			} else {
+				goal = end - 360.0f;
+			}
+
+			animator.setFloatValues(start, goal);
+			animator.start();
+
+		}
 	}
 }

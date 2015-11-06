@@ -3,4 +3,11 @@
 	<string name="permission_denied">Permission denied</string>
 	<string name="compass_background">Compass background</string>
 	<string name="compass_needle">Compass needle</string>
+	<string name="latitude">Latitude</string>
+	<string name="longitude">longitude</string>
+	<string name="enter_value">Enter value</string>
+	<string name="permissible_latitude">The permissible latitude from -90 to 90</string>
+	<string name="permissible_longitude">The permissible longitude from -180 to 180</string>
+	<string name="my_location">My location</string>
+	<string name="dest_location">Destination location</string>
 </resources>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:tools="http://schemas.android.com/tools"
+	android:layout_width="wrap_content"
+	android:layout_height="wrap_content"
+	tools:showIn="@layout/activity_main">
+
+	<ImageView
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center"
+		android:adjustViewBounds="true"
+		android:contentDescription="@string/compass_background"
+		android:scaleType="centerInside"
+		android:src="@drawable/compass_background"/>
+
+	<ImageView
+		android:id="@+id/bearing_needle"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center"
+		android:adjustViewBounds="true"
+		android:contentDescription="@string/compass_needle"
+		android:scaleType="centerInside"
+		android:src="@drawable/compass_beering_needle"
+		android:visibility="gone"/>
+
+	<ImageView
+		android:id="@+id/needle"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center"
+		android:adjustViewBounds="true"
+		android:contentDescription="@string/compass_needle"
+		android:scaleType="centerInside"
+		android:src="@drawable/compass_needle"/>
+</FrameLayout>
