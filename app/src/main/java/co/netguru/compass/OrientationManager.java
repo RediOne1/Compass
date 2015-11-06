@@ -27,8 +27,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class OrientationManager implements SensorEventListener {
 
-	private static final long MAX_LOCATION_AGE_MILLIS = TimeUnit.MINUTES.toMillis(30);
-
 	private static final long METERS_BETWEEN_LOCATIONS = 2;
 
 	private static final long MILLIS_BETWEEN_LOCATIONS = TimeUnit.SECONDS.toMillis(3);
@@ -116,12 +114,9 @@ public class OrientationManager implements SensorEventListener {
 		Location lastLocation = locationManager
 				.getLastKnownLocation(LocationManager.PASSIVE_PROVIDER);
 		if (lastLocation != null) {
-			long locationAge = lastLocation.getTime() - System.currentTimeMillis();
-			if (locationAge < MAX_LOCATION_AGE_MILLIS) {
-				mLocation = lastLocation;
-				orientationListener.onLocationChange(lastLocation);
-				updateGeomagneticField();
-			}
+			mLocation = lastLocation;
+			orientationListener.onLocationChange(lastLocation);
+			updateGeomagneticField();
 		}
 
 		locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,
