@@ -1,0 +1,6 @@
+<resources>
+	<string name="app_name">Compass</string>
+	<string name="permission_denied">Permission denied</string>
+	<string name="compass_background">Compass background</string>
+	<string name="compass_needle">Compass needle</string>
+</resources>
